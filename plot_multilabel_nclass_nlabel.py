@@ -2,7 +2,7 @@
 # License: BSD 3 clause
 """
 =========================
-Multilabel classification
+Extended from Multilabel classification example
 =========================
 
 This example simulates a multi-label document classification problem. The
@@ -80,7 +80,7 @@ def plot_subfigure(X, Y, subplot, title, transform):
     print("X=")
     #print(X)
     print("Y=")
-    print(Y)
+    #print(Y)
     print("X length " + str(len(X)))
     print("Y length " + str(len(Y)))
 
