@@ -50,6 +50,7 @@ n_labels_ = int(sys.argv[5]) if len(sys.argv) >= 6 else 2
 class_edge_colors = [ 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red', 'orange', 'blue', 'red' ]
 n_components_ = int(sys.argv[6]) if len(sys.argv) >= 7 else 2
 input_to_be_predicted = None
+input_to_be_predicted_labels = None
 
 if ENV == 0:
     digits = load_digits()
@@ -64,6 +65,8 @@ else:
     data = np.array( json.load( open( sys.argv[2] ) ) )
     #y = np.zeros( len(X) )
     input_to_be_predicted = np.array( json.load( open( sys.argv[3] ) ) )
+    
+    input_to_be_predicted_labels = np.array( json.load( open( sys.argv[14] ) ) ) if len(sys.argv) >= 15 else None
 
     n_samples = len(data)
     n_features = len(data[0])
@@ -124,6 +127,22 @@ x_min, x_max = reduced_data[:, 0].min() - 1, reduced_data[:, 0].max() + 1
 y_min, y_max = reduced_data[:, 1].min() - 1, reduced_data[:, 1].max() + 1
 xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
 
+
+#
+if not input_to_be_predicted.any() == None:
+    print("predict result")
+    input_to_be_predicted = PCA(n_components=2).fit_transform(input_to_be_predicted)
+    res = kmeans.predict( input_to_be_predicted )
+    print( res )
+
+    print("target")
+    print( input_to_be_predicted_labels )
+    
+    from cross_entropy import cross_entropy
+    print("cross_entropy")
+    print( cross_entropy(res, input_to_be_predicted_labels) )
+
+    
 # Obtain labels for each point in mesh. Use last trained model.
 Z = kmeans.predict(np.c_[xx.ravel(), yy.ravel()])
 
@@ -149,3 +168,4 @@ plt.ylim(y_min, y_max)
 plt.xticks(())
 plt.yticks(())
 plt.show()
+
