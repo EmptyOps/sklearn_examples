@@ -20,6 +20,7 @@ input_to_be_predicted = np.array( json.load( open( sys.argv[3] ) ) )
 
 input_to_be_predicted_labels = np.array( json.load( open( sys.argv[14] ) ) ) if len(sys.argv) >= 15 else None
 
+outfile_path = sys.argv[15] if len(sys.argv) >= 16 else None
 
 if __name__ == '__main__':
     print("X length " + str(len(X)) )
@@ -29,9 +30,12 @@ if __name__ == '__main__':
 
     #X = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]
     y = Y #[0, 0, 0, 1]
-    clf = MLPClassifier(solver='lbfgs', alpha=1e-1, activation='identity', verbose=False,
-                        tol=1e-20, max_iter=10000, 
-                        hidden_layer_sizes=(25, 25, 25, 25), random_state=1)
+    #clf = MLPClassifier(solver='lbfgs', alpha=1e-1, activation='identity', verbose=False,
+    #                    tol=1e-20, max_iter=10000, 
+    #                    hidden_layer_sizes=(25, 25, 25, 25), random_state=1)
+    clf = MLPClassifier(solver='lbfgs', alpha=1e-1, activation='identity', verbose=True,
+                        tol=1e-20, max_iter=100, 
+                        hidden_layer_sizes=(286, 286, 286, 286, 286, 286, 286, 286, 144, 72, 36, 18, 9, 2), random_state=1)
     print(clf.fit(X, y))   
 
 
@@ -63,12 +67,162 @@ if __name__ == '__main__':
     print("target")
     print( input_to_be_predicted_labels )
 
-    result = clf.predict( input_to_be_predicted )
+    res = clf.predict( input_to_be_predicted )
     
     print("result")
-    print(result)                      
+    print(res)                      
                           
                           
     prob_results = clf.predict_proba( input_to_be_predicted )
     print(prob_results)
                       
+    if not outfile_path == None:
+        with open( outfile_path, 'w') as outfile:
+            json.dump(prob_results.tolist(), outfile)                      
+        
+        
+    # in dev mode 
+    if ENV == 1:
+        from matplotlib import pyplot as plt
+    
+        X_cls1_wrong = []
+        X_cls2_wrong = []
+        
+        X_cls1_wrong_prob = []
+        X_cls2_wrong_prob = []
+        
+        X_cls1_wrong_prob_cnt = {}
+        X_cls2_wrong_prob_cnt = {}
+        X_cls1_wrong_prob_cnt["09_100"] = 0
+        X_cls1_wrong_prob_cnt["08_9"] = 0
+        X_cls1_wrong_prob_cnt["07_8"] = 0
+        X_cls1_wrong_prob_cnt["06_7"] = 0
+        X_cls1_wrong_prob_cnt["05_6"] = 0
+        X_cls2_wrong_prob_cnt["09_100"] = 0
+        X_cls2_wrong_prob_cnt["08_9"] = 0
+        X_cls2_wrong_prob_cnt["07_8"] = 0
+        X_cls2_wrong_prob_cnt["06_7"] = 0
+        X_cls2_wrong_prob_cnt["05_6"] = 0
+
+        X_cls1_right_prob_cnt = {}
+        X_cls2_right_prob_cnt = {}
+        X_cls1_right_prob_cnt["09_100"] = 0
+        X_cls1_right_prob_cnt["08_9"] = 0
+        X_cls1_right_prob_cnt["07_8"] = 0
+        X_cls1_right_prob_cnt["06_7"] = 0
+        X_cls1_right_prob_cnt["05_6"] = 0
+        X_cls2_right_prob_cnt["09_100"] = 0
+        X_cls2_right_prob_cnt["08_9"] = 0
+        X_cls2_right_prob_cnt["07_8"] = 0
+        X_cls2_right_prob_cnt["06_7"] = 0
+        X_cls2_right_prob_cnt["05_6"] = 0
+
+        
+        X = input_to_be_predicted
+        Y = input_to_be_predicted_labels
+        
+        Y_tmp = res
+        Y_tmp_prob = prob_results
+        unique, counts = np.unique(input_to_be_predicted_labels, return_counts=True)
+        cnts = dict(zip(unique, counts))
+        #cnt1 = cnts[0]
+        #cnt2 = cnts[1]
+        print( cnts )
+        #print( "cnt1 " + str(cnt1) + " cnt2 " + str(cnt2) )
+        size1 = len(input_to_be_predicted_labels)
+        
+        #big_class = 0 if cnt1 > cnt2 else 1
+        for idx in range(0, size1):
+            #TODO temp 
+            #size2 = len(X[idx])
+            #for idx2 in range(0, size2):
+            #    X[idx][idx2] = X[idx][idx2] - 1000 if X[idx][idx2] > 1000 else X[idx][idx2]
+        
+            #if Y_tmp[idx] == 0 and not Y_tmp[idx] == Y[idx] and Y_tmp_prob[idx][0] >= 0.9999 and len(X_cls1_wrong) < 10000:
+            if Y_tmp[idx] == 0 and not Y_tmp[idx] == Y[idx] and len(X_cls1_wrong) < 10000:
+                X_cls1_wrong.append(X[idx])
+                X_cls1_wrong_prob.append(Y_tmp_prob[idx][0])
+                
+                if Y_tmp_prob[idx][0] >= 0.9:
+                    X_cls1_wrong_prob_cnt["09_100"] = X_cls1_wrong_prob_cnt["09_100"] + 1
+                elif Y_tmp_prob[idx][0] >= 0.8:
+                    X_cls1_wrong_prob_cnt["08_9"] = X_cls1_wrong_prob_cnt["08_9"] + 1
+                elif Y_tmp_prob[idx][0] >= 0.7:
+                    X_cls1_wrong_prob_cnt["07_8"] = X_cls1_wrong_prob_cnt["07_8"] + 1
+                elif Y_tmp_prob[idx][0] >= 0.6:
+                    X_cls1_wrong_prob_cnt["06_7"] = X_cls1_wrong_prob_cnt["06_7"] + 1
+                elif Y_tmp_prob[idx][0] >= 0.5:
+                    X_cls1_wrong_prob_cnt["05_6"] = X_cls1_wrong_prob_cnt["05_6"] + 1
+                
+            #elif Y_tmp[idx] == 1 and not Y_tmp[idx] == Y[idx] and Y_tmp_prob[idx][1] >= 0.9999 and len(X_cls2_wrong) < 10000:
+            elif Y_tmp[idx] == 1 and not Y_tmp[idx] == Y[idx] and len(X_cls2_wrong) < 10000:
+                X_cls2_wrong.append(X[idx])
+                X_cls2_wrong_prob.append(Y_tmp_prob[idx][1])
+                
+                if Y_tmp_prob[idx][1] >= 0.9:
+                    X_cls2_wrong_prob_cnt["09_100"] = X_cls2_wrong_prob_cnt["09_100"] + 1
+                elif Y_tmp_prob[idx][1] >= 0.8:
+                    X_cls2_wrong_prob_cnt["08_9"] = X_cls2_wrong_prob_cnt["08_9"] + 1
+                elif Y_tmp_prob[idx][1] >= 0.7:
+                    X_cls2_wrong_prob_cnt["07_8"] = X_cls2_wrong_prob_cnt["07_8"] + 1
+                elif Y_tmp_prob[idx][1] >= 0.6:
+                    X_cls2_wrong_prob_cnt["06_7"] = X_cls2_wrong_prob_cnt["06_7"] + 1
+                elif Y_tmp_prob[idx][1] >= 0.5:
+                    X_cls2_wrong_prob_cnt["05_6"] = X_cls2_wrong_prob_cnt["05_6"] + 1
+                    
+            elif Y_tmp[idx] == 0:
+                
+                if Y_tmp_prob[idx][0] >= 0.9:
+                    X_cls1_right_prob_cnt["09_100"] = X_cls1_right_prob_cnt["09_100"] + 1
+                elif Y_tmp_prob[idx][0] >= 0.8:
+                    X_cls1_right_prob_cnt["08_9"] = X_cls1_right_prob_cnt["08_9"] + 1
+                elif Y_tmp_prob[idx][0] >= 0.7:
+                    X_cls1_right_prob_cnt["07_8"] = X_cls1_right_prob_cnt["07_8"] + 1
+                elif Y_tmp_prob[idx][0] >= 0.6:
+                    X_cls1_right_prob_cnt["06_7"] = X_cls1_right_prob_cnt["06_7"] + 1
+                elif Y_tmp_prob[idx][0] >= 0.5:
+                    X_cls1_right_prob_cnt["05_6"] = X_cls1_right_prob_cnt["05_6"] + 1
+                
+            elif Y_tmp[idx] == 1:
+                
+                if Y_tmp_prob[idx][1] >= 0.9:
+                    X_cls2_right_prob_cnt["09_100"] = X_cls2_right_prob_cnt["09_100"] + 1
+                elif Y_tmp_prob[idx][1] >= 0.8:
+                    X_cls2_right_prob_cnt["08_9"] = X_cls2_right_prob_cnt["08_9"] + 1
+                elif Y_tmp_prob[idx][1] >= 0.7:
+                    X_cls2_right_prob_cnt["07_8"] = X_cls2_right_prob_cnt["07_8"] + 1
+                elif Y_tmp_prob[idx][1] >= 0.6:
+                    X_cls2_right_prob_cnt["06_7"] = X_cls2_right_prob_cnt["06_7"] + 1
+                elif Y_tmp_prob[idx][1] >= 0.5:
+                    X_cls2_right_prob_cnt["05_6"] = X_cls2_right_prob_cnt["05_6"] + 1                    
+        
+        print( "X_cls1_wrong " + str(len(X_cls1_wrong)) )
+        print( "X_cls2_wrong " + str(len(X_cls2_wrong)) )
+        print( "X_cls1_wrong_prob_cnt " + str(X_cls1_wrong_prob_cnt) )
+        print( "X_cls2_wrong_prob_cnt " + str(X_cls2_wrong_prob_cnt) )
+        print( "X_cls1_right_prob_cnt " + str(X_cls1_right_prob_cnt) )
+        print( "X_cls2_right_prob_cnt " + str(X_cls2_right_prob_cnt) )
+        if len(X_cls1_wrong) > 0:
+            sizeloop = len(X_cls1_wrong) if len(X_cls1_wrong) > len(X_cls2_wrong) else len(X_cls2_wrong)
+            for idx in range(0, sizeloop):
+                is_plot = False
+            
+                if len(X_cls1_wrong) > idx:
+                    if max( X_cls1_wrong[idx] ) > 6:
+                        print( "X_cls1_wrong prob " + str(X_cls1_wrong_prob[idx]) )
+                        
+                        is_plot = True
+                        plt.subplot(2, 2, 1)
+                        plt.plot( X_cls1_wrong[idx], color="red") 
+
+                if len(X_cls2_wrong) > idx:
+                    if max( X_cls2_wrong[idx] ) > 6:
+                        print( "X_cls2_wrong prob " + str(X_cls2_wrong_prob[idx]) )
+                        
+                        is_plot = True
+                        plt.subplot(2, 2, 2)
+                        plt.plot( X_cls2_wrong[idx], color="blue") 
+
+                if is_plot == True:
+                    plt.show()        
+                    

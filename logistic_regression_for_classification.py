@@ -37,6 +37,7 @@ print(Y)
 input_to_be_predicted = json.load( open( sys.argv[3] ) )
 input_to_be_predicted = array( input_to_be_predicted )
 input_to_be_predicted_labels = np.array( json.load( open( sys.argv[14] ) ) ) if len(sys.argv) >= 15 else None
+outfile_path = sys.argv[15] if len(sys.argv) >= 16 else None
 
 if __name__ == '__main__':
 
@@ -63,7 +64,7 @@ if __name__ == '__main__':
         #print(type(res))
         print(res)
         
-        with open( checkpoint_directory + 'output_'+prediction_decision_id+'.json', 'w') as outfile:
+        with open( outfile_path, 'w') as outfile:
             json.dump(res.tolist(), outfile)
     else:
         print( "input " + str(len(input_to_be_predicted)) )
@@ -77,11 +78,12 @@ if __name__ == '__main__':
         print("target")
         print( input_to_be_predicted_labels )
 
-        from cross_entropy import cross_entropy
-        print("cross_entropy")
-        print( cross_entropy(res, input_to_be_predicted_labels) )
+        if len(input_to_be_predicted_labels) > 0:
+            from cross_entropy import cross_entropy
+            print("cross_entropy")
+            print( cross_entropy(res, input_to_be_predicted_labels) )
         
-        with open( checkpoint_directory + 'output_'+prediction_decision_id+'.json', 'w') as outfile:
+        with open( outfile_path, 'w') as outfile:
             json.dump(res.tolist(), outfile)
         
         # in dev mode 
