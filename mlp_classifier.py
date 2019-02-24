@@ -28,16 +28,42 @@ if __name__ == '__main__':
     print("Y length " + str(len(Y)) )
     print(Y)
 
+    
+    #apply PCA only if needed 
+    is_do_pca = False
+    if is_do_pca == True:
+        from sklearn.decomposition import PCA
+        import math
+        n_components_val = math.ceil( len(X[0]) / 5 )
+        print( X.shape )
+        X = PCA( n_components= n_components_val ).fit_transform( X )
+        print( X.shape )
+    
     #X = [[0., 0.], [0., 1.], [1., 0.], [1., 1.]]
     y = Y #[0, 0, 0, 1]
     #clf = MLPClassifier(solver='lbfgs', alpha=1e-1, activation='identity', verbose=False,
     #                    tol=1e-20, max_iter=10000, 
     #                    hidden_layer_sizes=(25, 25, 25, 25), random_state=1)
+    
+    loss_curve_ = []
     clf = MLPClassifier(solver='lbfgs', alpha=1e-1, activation='identity', verbose=True,
-                        tol=1e-20, max_iter=100, 
-                        hidden_layer_sizes=(286, 286, 286, 286, 286, 286, 286, 286, 144, 72, 36, 18, 9, 2), random_state=1)
-    print(clf.fit(X, y))   
+                        tol=1e-20, max_iter=1, warm_start=True, 
+                        hidden_layer_sizes=(288, 144, 72, 36, 18, 8, 2), random_state=1)
+                        
+    for i in range(1, 5000):
+        clf.fit(X, y)
+        loss_curve_.append( clf.loss_ )
 
+        if ENV == 1 and i % 1000 == 0:
+            from matplotlib import pyplot as plt
+            
+            #loss curve 
+            plt.ylabel('cost')
+            plt.xlabel('iterations')
+            plt.title("Loss curve")
+            plt.plot( loss_curve_ )
+            plt.show()
+        
 
     #print("weights between input and first hidden layer:")
     #print(clf.coefs_[0])
@@ -64,6 +90,20 @@ if __name__ == '__main__':
     #print(clf.intercepts_[1])
 
     
+    #save model 
+    #from joblib import dump, load
+    #dump(clf, 'filename.joblib') 
+    import pickle
+    s = pickle.dumps(clf)
+    print(s)
+    
+    
+    #apply PCA only if needed 
+    if is_do_pca == True:
+        print( input_to_be_predicted.shape )
+        input_to_be_predicted = PCA(n_components=n_components_val).fit_transform( input_to_be_predicted )
+        print( input_to_be_predicted.shape )
+    
     print("target")
     print( input_to_be_predicted_labels )
 
@@ -84,12 +124,20 @@ if __name__ == '__main__':
     # in dev mode 
     if ENV == 1:
         from matplotlib import pyplot as plt
+        
     
+        #debug 
         X_cls1_wrong = []
         X_cls2_wrong = []
         
         X_cls1_wrong_prob = []
         X_cls2_wrong_prob = []
+
+        X_cls1_right = []
+        X_cls2_right = []
+        
+        X_cls1_right_prob = []
+        X_cls2_right_prob = []
         
         X_cls1_wrong_prob_cnt = {}
         X_cls2_wrong_prob_cnt = {}
@@ -171,6 +219,8 @@ if __name__ == '__main__':
                     X_cls2_wrong_prob_cnt["05_6"] = X_cls2_wrong_prob_cnt["05_6"] + 1
                     
             elif Y_tmp[idx] == 0:
+                X_cls1_right.append(X[idx])
+                X_cls1_right_prob.append(Y_tmp_prob[idx][0])
                 
                 if Y_tmp_prob[idx][0] >= 0.9:
                     X_cls1_right_prob_cnt["09_100"] = X_cls1_right_prob_cnt["09_100"] + 1
@@ -184,6 +234,8 @@ if __name__ == '__main__':
                     X_cls1_right_prob_cnt["05_6"] = X_cls1_right_prob_cnt["05_6"] + 1
                 
             elif Y_tmp[idx] == 1:
+                X_cls2_right.append(X[idx])
+                X_cls2_right_prob.append(Y_tmp_prob[idx][1])
                 
                 if Y_tmp_prob[idx][1] >= 0.9:
                     X_cls2_right_prob_cnt["09_100"] = X_cls2_right_prob_cnt["09_100"] + 1
@@ -202,8 +254,11 @@ if __name__ == '__main__':
         print( "X_cls2_wrong_prob_cnt " + str(X_cls2_wrong_prob_cnt) )
         print( "X_cls1_right_prob_cnt " + str(X_cls1_right_prob_cnt) )
         print( "X_cls2_right_prob_cnt " + str(X_cls2_right_prob_cnt) )
-        if len(X_cls1_wrong) > 0:
+        if len(X_cls1_wrong) > 0 or len(X_cls2_wrong) > 0 or len(X_cls1_right) > 0 or len(X_cls1_right) > 0:
             sizeloop = len(X_cls1_wrong) if len(X_cls1_wrong) > len(X_cls2_wrong) else len(X_cls2_wrong)
+            sizeloop = len(X_cls1_right) if len(X_cls1_right) > sizeloop else sizeloop
+            sizeloop = len(X_cls2_right) if len(X_cls2_right) > sizeloop else sizeloop
+            
             for idx in range(0, sizeloop):
                 is_plot = False
             
@@ -222,7 +277,24 @@ if __name__ == '__main__':
                         is_plot = True
                         plt.subplot(2, 2, 2)
                         plt.plot( X_cls2_wrong[idx], color="blue") 
+                        
+                if len(X_cls1_right) > idx:
+                    if max( X_cls1_right[idx] ) > 6:
+                        print( "X_cls1_right prob " + str(X_cls1_right_prob[idx]) )
+                        
+                        is_plot = True
+                        plt.subplot(2, 2, 3)
+                        plt.plot( X_cls1_right[idx], color="red") 
+
+                if len(X_cls2_right) > idx:
+                    if max( X_cls2_right[idx] ) > 6:
+                        print( "X_cls2_right prob " + str(X_cls2_right_prob[idx]) )
+                        
+                        is_plot = True
+                        plt.subplot(2, 2, 4)
+                        plt.plot( X_cls2_right[idx], color="blue")                         
 
                 if is_plot == True:
                     plt.show()        
+                    
                     
