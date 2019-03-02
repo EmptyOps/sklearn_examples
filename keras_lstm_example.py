@@ -8,10 +8,19 @@ from __future__ import print_function
 import keras
 from keras.datasets import mnist
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten
-from keras.layers import Conv2D, MaxPooling2D
 from keras import backend as K
 from keras.models import load_model
+
+# Keras
+from keras.layers import Dense, Flatten, LSTM, Conv1D, MaxPooling1D, Dropout, Activation
+from keras.layers.embeddings import Embedding
+
+# Others
+import string
+import numpy as np
+import pandas as pd
+
+from sklearn.manifold import TSNE
 
 
 import sys
@@ -58,11 +67,13 @@ img_rows, img_cols = rows, cols   #28, 28
 
 x_test = input_to_be_predicted
     
-if is_sample_debug_only == 0:    
+if True or is_sample_debug_only == 0:    
     if model == None:    
         print("X length " + str(len(X)) )
         print("X[0] length " + str(len(X[0])) )
         print("Y length " + str(len(Y)) )
+        print("Y length 0 class " + str(Y.count(0)) )
+        print("Y length 1 class " + str(Y.count(1)) )
         print(Y)
 
 
@@ -76,15 +87,6 @@ if is_sample_debug_only == 0:
         y_train = Y
         y_test = input_to_be_predicted_labels
 
-        if K.image_data_format() == 'channels_first':
-            x_train = x_train.reshape(x_train.shape[0], 1, img_rows, img_cols)
-            x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
-            input_shape = (1, img_rows, img_cols)
-        else:
-            x_train = x_train.reshape(x_train.shape[0], img_rows, img_cols, 1)
-            x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
-            input_shape = (img_rows, img_cols, 1)
-
         x_train = x_train.astype('float32')
         x_test = x_test.astype('float32')
         
@@ -97,30 +99,21 @@ if is_sample_debug_only == 0:
         print(x_test.shape[0], 'test samples')
 
         # convert class vectors to binary class matrices
-        y_train = keras.utils.to_categorical(y_train, num_classes)
-        y_test = keras.utils.to_categorical(y_test, num_classes)
+        #y_train = keras.utils.to_categorical(y_train, num_classes)
+        #y_test = keras.utils.to_categorical(y_test, num_classes)
 
+        
+        ## Network architecture
         model = Sequential()
-        model.add(Conv2D(32, kernel_size=(1, 3),
-                         activation='relu',
-                         input_shape=input_shape))
-        model.add(Conv2D(64, (1, 3), activation='relu'))
-        model.add(MaxPooling2D(pool_size=(1, 2)))
-        model.add(Dropout(0.25))
-        model.add(Flatten())
-        model.add(Dense(128, activation='relu'))
-        model.add(Dropout(0.5))
-        model.add(Dense(num_classes, activation='softmax'))
+        model.add(Embedding(20000, 100, input_length=len(X[0]) ) )
+        model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
+        model.add(Dense(1, activation='sigmoid'))
+        model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        
+        ## Fit the model
+        model.fit(x_train, y_train, validation_split=0.4, epochs=epochs)
 
-        model.compile(loss=keras.losses.categorical_crossentropy,
-                      optimizer=keras.optimizers.Adadelta(),
-                      metrics=['accuracy'])
-
-        model.fit(x_train, y_train,
-                  batch_size=batch_size,
-                  epochs=epochs,
-                  verbose=1,
-                  validation_data=(x_test, y_test))
+        
         score = model.evaluate(x_test, y_test, verbose=0)
         print('Test loss:', score[0])
         print('Test accuracy:', score[1])
@@ -128,11 +121,6 @@ if is_sample_debug_only == 0:
         model.save( modelfile_path )
         
     else:
-
-        if K.image_data_format() == 'channels_first':
-            x_test = x_test.reshape(x_test.shape[0], 1, img_rows, img_cols)
-        else:
-            x_test = x_test.reshape(x_test.shape[0], img_rows, img_cols, 1)
             
         x_test = x_test.astype('float32')
         
@@ -197,6 +185,8 @@ if ENV == 1:
     if True:
         sample_index = 0 
         size_sample = len(Y)
+        last_shown_index = -1
+        show_step = 500
         while(True):
             """
             columns = 10
@@ -218,6 +208,10 @@ if ENV == 1:
             idx = 0
             while(True):
                 if sample_index < size_sample:
+                    if not last_shown_index == -1 and sample_index - last_shown_index < show_step:
+                        sample_index = sample_index + 1
+                        continue
+                
                     if not last_class_covered == -1 and not last_index_covered == sample_index and last_class_covered == Y[sample_index]:
                         sample_index = sample_index + 1
                         continue
@@ -237,6 +231,8 @@ if ENV == 1:
                     plt.plot( X[sample_index][ ( img_cols * ( modr - 1 ) ) : ( img_cols * modr ) ], color= "red" if Y[sample_index] == 0 else "blue" ) 
                     
                     if idx % img_rows == 0:
+                        last_shown_index = sample_index
+                    
                         sample_index = sample_index + 1
                         
                         if not last_class_covered == Y[last_index_covered]:                        
