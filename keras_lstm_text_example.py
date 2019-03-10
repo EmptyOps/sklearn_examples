@@ -4,26 +4,24 @@ Gets to 99.25% test accuracy after 12 epochs
 16 seconds per epoch on a GRID K520 GPU.
 '''
 
-from __future__ import print_function
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from keras.models import Model
+from keras.layers import LSTM, Activation, Dense, Dropout, Input, Embedding
+from keras.optimizers import RMSprop
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing import sequence
+from keras.utils import to_categorical
+from keras.callbacks import EarlyStopping
+
 import keras
-from keras.datasets import mnist
-from keras.models import Sequential
-from keras import backend as K
 from keras.models import load_model
 
-# Keras
-from keras.layers import Dense, Flatten, LSTM, Conv1D, MaxPooling1D, Dropout, Activation
-from keras.layers.embeddings import Embedding
-
-# Others
-import string
-import numpy as np
-import pandas as pd
-
-from sklearn.manifold import TSNE
-
-
-import sys
+import sys, os
 import json
 from numpy import array
 import numpy as np
@@ -54,6 +52,8 @@ modelfile_path = sys.argv[18] if len(sys.argv) >= 19 else None
 
 is_sample_debug_only = int(sys.argv[20]) if len(sys.argv) >= 21 else 0
 
+#use absolute paths
+ABS_PATh = os.path.dirname(os.path.abspath(__file__)) + "/"
 
 model = None
 
@@ -76,57 +76,105 @@ print(Y)
 
     
 if is_sample_debug_only == 0:    
+
+    num_classes = n_classes_ #10
     if model == None:    
         batch_size = 128
-        num_classes = n_classes_ #10
-        epochs = 7    #1000     #12
+        epochs = 20    #1000     #12
 
-        # the data, split between train and test sets
-        #(x_train, y_train), (x_test, y_test) = mnist.load_data()
-        x_train = X
-        y_train = Y
-        y_test = input_to_be_predicted_labels
+        is_use_sample_data = False
+        if is_use_sample_data == True:
+            df = pd.read_csv( ABS_PATh + 'input/spam.csv',delimiter=',',encoding='latin-1')
+            df.head()
+            
+            df.drop(['Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4'],axis=1,inplace=True)
+            df.info()
+            
+            #Understand the distribution better.
+            sns.countplot(df.v1)
+            plt.xlabel('Label')
+            plt.title('Number of ham and spam messages')
+            plt.show()
 
-        x_train = x_train.astype('float32')
-        x_test = x_test.astype('float32')
+            X = df.v2
+            Y = df.v1
+            
+            le = LabelEncoder()
+            Y = le.fit_transform(Y)
+            Y = Y.reshape(-1,1)
+        else:
+            # convert class vectors to binary class matrices
+            Y = keras.utils.to_categorical(Y, num_classes)
+            
         
-        #TODO turned off temporarily
-        #x_train /= 255
-        #x_test /= 255
-        
-        print('x_train shape:', x_train.shape)
-        print(x_train.shape[0], 'train samples')
-        print(x_test.shape[0], 'test samples')
+        X_train,X_test,Y_train,Y_test = train_test_split(X,Y,test_size=0.15)
+                
+        #X_train = X_train.astype('float32')
+        #X_test = X_test.astype('float32')
 
-        # convert class vectors to binary class matrices
-        #y_train = keras.utils.to_categorical(y_train, num_classes)
-        #y_test = keras.utils.to_categorical(y_test, num_classes)
+
+        max_words = 1000
+        max_len = 150
+        if is_use_sample_data == True:
+            tok = Tokenizer(num_words=max_words)
+            tok.fit_on_texts(X_train)
+            sequences = tok.texts_to_sequences(X_train)
+            sequences_matrix = sequence.pad_sequences(sequences,maxlen=max_len)
+            
+            test_sequences = tok.texts_to_sequences(X_test)
+            test_sequences_matrix = sequence.pad_sequences(test_sequences,maxlen=max_len)
+        else:
+            max_words = 500
+            max_len = len( X_train[0] )
+            sequences_matrix = X_train
+            test_sequences_matrix = X_test
+            
+        print( sequences_matrix[0] )
+        print( type( sequences_matrix[0] ) )
+        print( sequences_matrix[0].shape )
+        print( sequences_matrix )
+        
+        def RNN():
+            inputs = Input(name='inputs',shape=[max_len])
+            layer = Embedding(max_words,50,input_length=max_len)(inputs)
+            layer = LSTM(64)(layer)
+            layer = Dense(256,name='FC1')(layer)
+            layer = Activation('relu')(layer)
+            layer = Dropout(0.5)(layer)
+            #layer = Dense(1,name='out_layer')(layer)
+            layer = Dense(2,name='out_layer')(layer)
+            #layer = Activation('sigmoid')(layer)
+            layer = Dense(2,name='out_layer2', activation='softmax')(layer)
+            model = Model(inputs=inputs,outputs=layer)
+            return model
+        
+        model = RNN()
+        model.summary()
+        #model.compile(loss='binary_crossentropy',optimizer=RMSprop(),metrics=['accuracy'])
+        model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
 
         
-        ## Network architecture
-        model = Sequential()
-        model.add(Embedding(20000, 100, input_length=len(X[0]) ) )
-        model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
-        model.add(Dense(1, activation='sigmoid'))
-        model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        model.fit(sequences_matrix,Y_train,batch_size=128,epochs=epochs,
+          validation_split=0.2)     #,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.0001)]
+          
         
-        ## Fit the model
-        model.fit(x_train, y_train, validation_split=0.4, epochs=epochs)
-
+        accr = model.evaluate(test_sequences_matrix,Y_test)
         
-        score = model.evaluate(x_test, y_test, verbose=0)
-        print('Test loss:', score[0])
-        print('Test accuracy:', score[1])
+        print('Test set\n  Loss: {:0.3f}\n  Accuracy: {:0.3f}'.format(accr[0],accr[1]))
 
         model.save( modelfile_path )
         
     else:
-            
-        x_test = x_test.astype('float32')
+        tmp = ''
         
-        #TODO
-        #x_test /= 255
+        #x_test = x_test.astype('float32')
 
+        ##TODO temp
+        ## convert class vectors to binary class matrices
+        #itbplc = keras.utils.to_categorical(input_to_be_predicted_labels, num_classes)
+        #accr = model.evaluate(x_test,itbplc)
+        #print('Test set\n  Loss: {:0.3f}\n  Accuracy: {:0.3f}'.format(accr[0],accr[1]))
+        
 
     #input_to_be_predicted = x_test    
 
@@ -136,12 +184,24 @@ if is_sample_debug_only == 0:
     prob_results = model.predict( x_test )
     res = prob_results.argmax(axis=-1)
     print("result")
-    print(res)                      
+    unique, counts = np.unique(res, return_counts=True)
+    print( dict(zip(unique, counts)) )
+    class_0_prob, class_1_prob = zip(*prob_results)
+    class_0_prob = np.array( class_0_prob )
+    class_1_prob = np.array( class_1_prob )
+    print( "class 0 prob > 0.9 " + str( ( (0.9 < class_0_prob) ).sum() ) )
+    print( "class 0 prob > 0.8 & <= 0.9 " + str( ((0.8 < class_0_prob) & (class_0_prob <= 0.9)).sum() ) )
+    print( "class 0 prob > 0.7 & <= 0.8 " + str( ((0.7 < class_0_prob) & (class_0_prob <= 0.8)).sum() ) )
+    print( "class 0 prob > 0.6 & <= 0.7 " + str( ((0.6 < class_0_prob) & (class_0_prob <= 0.7)).sum() ) )
+    print( "class 0 prob > 0.5 & <= 0.6 " + str( ((0.5 < class_0_prob) & (class_0_prob <= 0.6)).sum() ) )
+    print( "class 1 prob > 0.9 " + str( ( (0.9 < class_1_prob) ).sum() ) )
+    print( "class 1 prob > 0.8 & <= 0.9 " + str( ((0.8 < class_1_prob) & (class_1_prob <= 0.9)).sum() ) )
+    print( "class 1 prob > 0.7 & <= 0.8 " + str( ((0.7 < class_1_prob) & (class_1_prob <= 0.8)).sum() ) )
+    print( "class 1 prob > 0.6 & <= 0.7 " + str( ((0.6 < class_1_prob) & (class_1_prob <= 0.7)).sum() ) )
+    print( "class 1 prob > 0.5 & <= 0.6 " + str( ((0.5 < class_1_prob) & (class_1_prob <= 0.6)).sum() ) )
+    print(res) 
     print(prob_results)
     
-    #TODO temp
-    score = model.predict_classes(x_test, verbose=1)
-    print( score )
                       
     if not outfile_path == None:
         with open( outfile_path, 'w') as outfile:
@@ -184,13 +244,13 @@ if ENV == 1:
             plt.show()
             if sample_index >= size_sample:
                 break
-                
+
     #debug by samples
-    if True:
+    if False:
         sample_index = 0 
         size_sample = len(Y)
         last_shown_index = -1
-        show_step = 500
+        show_step = 500  #500
         while(True):
             """
             columns = 10
@@ -232,6 +292,7 @@ if ENV == 1:
                     if modr == 0:
                         modr = img_rows
                     
+                    print( X[sample_index][ ( img_cols * ( modr - 1 ) ) : ( img_cols * modr ) ] )
                     plt.plot( X[sample_index][ ( img_cols * ( modr - 1 ) ) : ( img_cols * modr ) ], color= "red" if Y[sample_index] == 0 else "blue" ) 
                     
                     if idx % img_rows == 0:
