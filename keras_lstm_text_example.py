@@ -27,15 +27,9 @@ from numpy import array
 import numpy as np
 
 ENV = int(sys.argv[1]) if len(sys.argv) >= 2 else 0
-input_non_norm = json.load( open( sys.argv[2] ) )
-class_labels = json.load( open( sys.argv[8] ) )
-
-input_non_norm = array( input_non_norm )
-Y = array( class_labels )
 
 to_be_predicted_index = -1 
 
-X = input_non_norm
 
 n_classes_ = int(sys.argv[4]) if len(sys.argv) >= 5 else 3
 
@@ -52,6 +46,7 @@ modelfile_path = sys.argv[18] if len(sys.argv) >= 19 else None
 
 is_sample_debug_only = int(sys.argv[20]) if len(sys.argv) >= 21 else 0
 
+
 #use absolute paths
 ABS_PATh = os.path.dirname(os.path.abspath(__file__)) + "/"
 
@@ -60,27 +55,41 @@ model = None
 import os.path
 if os.path.isfile(modelfile_path): 
     model = load_model(modelfile_path)    
-
     
 # input image dimensions
 img_rows, img_cols = rows, cols   #28, 28
 
 x_test = input_to_be_predicted
 
-print("X length " + str(len(X)) )
-print("X[0] length " + str(len(X[0])) )
-print("Y length " + str(len(Y)) )
-unique, counts = np.unique(Y, return_counts=True)
-print( dict(zip(unique, counts)) )
-print(Y)
+
+if is_sample_debug_only == 1 or model == None:    
+        #
+        total_input_files = int(sys.argv[21]) if len(sys.argv) >= 22 else 0
+        X = []
+        Y = []
+        for i in range(0, total_input_files):
+            if i == 0:
+                X = array( json.load( open( sys.argv[2].replace('{i}', str(i)) ) ) ) 
+                Y = array( json.load( open( sys.argv[8].replace('{i}', str(i)) ) ) ) 
+            else:
+                X = np.concatenate( ( X, array( json.load( open( sys.argv[2].replace('{i}', str(i)) ) ) ) ), axis=0 )
+                Y = np.concatenate( ( Y, array( json.load( open( sys.argv[8].replace('{i}', str(i)) ) ) ) ), axis=0 )
+    
+        print("X length " + str(len(X)) )
+        print("X[0] length " + str(len(X[0])) )
+        print("Y length " + str(len(Y)) )
+        unique, counts = np.unique(Y, return_counts=True)
+        print( dict(zip(unique, counts)) )
+        print(Y)
 
     
 if is_sample_debug_only == 0:    
 
     num_classes = n_classes_ #10
     if model == None:    
+
         batch_size = 128
-        epochs = 20    #1000     #12
+        epochs = 12    #1000     #12
 
         is_use_sample_data = False
         if is_use_sample_data == True:
@@ -147,6 +156,12 @@ if is_sample_debug_only == 0:
             layer = Dense(2,name='out_layer2', activation='softmax')(layer)
             model = Model(inputs=inputs,outputs=layer)
             return model
+
+        ##sample_weights
+        #from sklearn.utils import class_weight
+        #list_classes = [0, 1]
+        #y = X_train[list_classes].values
+        #sample_weights = class_weight.compute_sample_weight('balanced', y)
         
         model = RNN()
         model.summary()
@@ -155,7 +170,7 @@ if is_sample_debug_only == 0:
 
         
         model.fit(sequences_matrix,Y_train,batch_size=128,epochs=epochs,
-          validation_split=0.2)     #,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.0001)]
+          validation_split=0.2,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.001)])     #,sample_weight=sample_weights,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.0001)]
           
         
         accr = model.evaluate(test_sequences_matrix,Y_test)
