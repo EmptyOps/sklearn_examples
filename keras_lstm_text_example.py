@@ -169,15 +169,22 @@ if is_sample_debug_only == 0:
         model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
 
         
-        model.fit(sequences_matrix,Y_train,batch_size=128,epochs=epochs,
-          validation_split=0.2,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.001)])     #,sample_weight=sample_weights,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.0001)]
-          
-        
-        accr = model.evaluate(test_sequences_matrix,Y_test)
-        
-        print('Test set\n  Loss: {:0.3f}\n  Accuracy: {:0.3f}'.format(accr[0],accr[1]))
+        last_loss = 1
+        for epch in range(0, 1): #epochs):
+            model.fit(sequences_matrix,Y_train,batch_size=128,epochs=epochs,   #1, warm_start=True,  #epochs
+              validation_split=0.2,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.001)])     #,sample_weight=sample_weights,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.0001)]
 
-        model.save( modelfile_path )
+                      
+            accr = model.evaluate(test_sequences_matrix,Y_test)
+            print('Test set\n  Loss: {:0.3f}\n  Accuracy: {:0.3f}'.format(accr[0],accr[1]))
+
+            model.save( modelfile_path.replace( '{icls}', '-' + str(epch) + '-{:0.3f}-{:0.3f}'.format(accr[0],accr[1]) ) )
+          
+            if accr[0] >= last_loss - 0.001:
+                break
+                
+            last_loss = accr[0]
+
         
     else:
         tmp = ''

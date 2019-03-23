@@ -24,6 +24,7 @@ import gc
 import json
 from numpy import array
 import numpy as np
+import random
 
 ENV = int(sys.argv[1]) if len(sys.argv) >= 2 else 0
 
@@ -89,6 +90,37 @@ def wait_for_user( msg ):
        print("Please respond with 'yes' or 'no'")
        wait_for_user()
     
+def randomize( a, b ):
+    #a = ["Spears", "Adele", "NDubz", "Nicole", "Cristina"]
+    #b = [1, 2, 3, 4, 5]
+
+    combined = list(zip(a, b))
+    random.shuffle(combined)
+
+    a[:], b[:] = zip(*combined)
+    
+    return a, b
+
+def make_equal( a, b, cls1val, cls2val ):
+    cnts = {}
+    cnts[cls1val] = 0
+    cnts[cls2val] = 0
+
+    c = []
+    d = []
+    sizel = len(a)
+    for i in range(0, sizel):
+
+        if b[i] == cls2val or cnts[cls1val] < cnts[cls2val] + 100:
+            c.append( a[i] )
+            d.append( b[i] )
+            
+            cnts[b[i]] = cnts[b[i]] + 1
+        else:
+            continue
+    
+    return c, d
+    
     
 #    
 icls = {}
@@ -136,6 +168,10 @@ if is_sample_debug_only == 1 or model == None:
             Xs[ icls[Y[i]] ].append( X[i] )
             Ys[ icls[Y[i]] ].append( Y[i] % 2 )
             
+        #
+        Xs[ 2 ], Ys[ 2 ] = randomize( Xs[ 2 ], Ys[ 2 ] )
+        Xs[ 2 ], Ys[ 2 ] = make_equal( Xs[ 2 ], Ys[ 2 ], 0, 1 )
+            
 sizetestx = len(x_test)
 for i in range(0, sizetestx):
     input_to_be_predictedXs[ icls[input_to_be_predicted_labels[i]] ].append( x_test[i] )
@@ -164,6 +200,7 @@ for i in range(0, n_classes_):
                 unique, counts = np.unique(Y, return_counts=True)
                 print( dict(zip(unique, counts)) )
             
+
                 batch_size = 128
                 epochs = 12    #1000     #12
 
@@ -231,15 +268,21 @@ for i in range(0, n_classes_):
                 model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
 
                 
-                model.fit(sequences_matrix,Y_train,batch_size=128,epochs=epochs,
-                  validation_split=0.2,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.001)])     #,sample_weight=sample_weights,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.0001)]
-                  
-                
-                accr = model.evaluate(test_sequences_matrix,Y_test)
-                
-                print('Test set\n  Loss: {:0.3f}\n  Accuracy: {:0.3f}'.format(accr[0],accr[1]))
+                last_loss = 1
+                for epch in range(0, epochs):
+                    model.fit(sequences_matrix,Y_train,batch_size=128,epochs=1, warm_start=True,  #epochs
+                      validation_split=0.2,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.001)])     #,sample_weight=sample_weights,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.0001)]
 
-                model.save( modelfile_path.replace( '{icls}', str(icls[i]) ) )
+                    accr = model.evaluate(test_sequences_matrix,Y_test)
+                    
+                    model.save( modelfile_path.replace( '{icls}', str(icls[i]) + '-' + str(epch) + '-{:0.3f}-{:0.3f}'.format(accr[0],accr[1]) ) ) 
+                    print('Test set\n  Loss: {:0.3f}\n  Accuracy: {:0.3f}'.format(accr[0],accr[1]))                
+                
+                    if accr[0] >= last_loss - 0.001:
+                        break
+                
+                    last_loss = accr[0]
+                    
                 
             else:
                 tmp = ''
