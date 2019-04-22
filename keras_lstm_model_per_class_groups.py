@@ -32,6 +32,7 @@ to_be_predicted_index = -1
 
 
 n_classes_ = int(sys.argv[4]) if len(sys.argv) >= 5 else 3
+base_classes_  = int(sys.argv[22]) if len(sys.argv) >= 23 else 0
 
 input_to_be_predicted = np.array( json.load( open( sys.argv[3] ) ) )
 input_to_be_predicted_labels = np.array( json.load( open( sys.argv[14] ) ) ) if len(sys.argv) >= 15 else None
@@ -169,8 +170,10 @@ if is_sample_debug_only == 1 or model == None:
             Ys[ icls[Y[i]] ].append( Y[i] % 2 )
             
         #
+        Xs[ 1 ], Ys[ 1 ] = randomize( Xs[ 1 ], Ys[ 1 ] )
+        #Xs[ 1 ], Ys[ 1 ] = make_equal( Xs[ 1 ], Ys[ 1 ], 0, 1 )
         Xs[ 2 ], Ys[ 2 ] = randomize( Xs[ 2 ], Ys[ 2 ] )
-        Xs[ 2 ], Ys[ 2 ] = make_equal( Xs[ 2 ], Ys[ 2 ], 0, 1 )
+        #Xs[ 2 ], Ys[ 2 ] = make_equal( Xs[ 2 ], Ys[ 2 ], 0, 1 )
             
 sizetestx = len(x_test)
 for i in range(0, sizetestx):
@@ -182,10 +185,11 @@ for i in range(0, n_classes_):
     if (i+1) % 2 == 0:
         print("processing icls " + str(icls[i]))
 
-        
         model = None
-        if os.path.isfile(modelfile_path.replace( '{icls}', str(icls[i]) )): 
-            model = load_model( modelfile_path.replace( '{icls}', str(icls[i]) ) )    
+        model_no = icls[i] if n_classes_ <= base_classes_ else ( base_classes_/2 if icls[i] % (base_classes_/2) == 0 else icls[i] % (base_classes_/2) )
+        model_no = int( model_no )
+        if os.path.isfile(modelfile_path.replace( '{icls}', str( model_no ) )): 
+            model = load_model( modelfile_path.replace( '{icls}', str( model_no ) ) )    
 
         if is_sample_debug_only == 0:    
 
@@ -269,8 +273,8 @@ for i in range(0, n_classes_):
 
                 
                 last_loss = 1
-                for epch in range(0, epochs):
-                    model.fit(sequences_matrix,Y_train,batch_size=128,epochs=1, warm_start=True,  #epochs
+                for epch in range(0, 1): #epochs):
+                    model.fit(sequences_matrix,Y_train,batch_size=128,epochs=epochs,   #1, warm_start=True,  #epochs
                       validation_split=0.2,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.001)])     #,sample_weight=sample_weights,callbacks=[EarlyStopping(monitor='val_loss',min_delta=0.0001)]
 
                     accr = model.evaluate(test_sequences_matrix,Y_test)
@@ -331,7 +335,11 @@ for i in range(0, n_classes_):
             except Exception as e:
                 print( e )
                 
-            wait_for_user( "processing icls " + str(icls[i]) + " is done, press enter to continue... " ) 
+            msg = "processing icls " + str(icls[i]) + " is done, press enter to continue... "
+            if ENV < 1:
+                wait_for_user( msg ) 
+            else:
+                print( msg )
 
 
 #          
