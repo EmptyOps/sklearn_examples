@@ -183,7 +183,10 @@ for i in range(0, sizetestx):
             
 for i in range(0, n_classes_):
     if (i+1) % 2 == 0:
-        print("processing icls " + str(icls[i]))
+        if len( input_to_be_predictedYs[ icls[i] ] ) > 0:
+            print("processing icls " + str(icls[i]))
+        else:
+            print("skipping icls " + str(icls[i]))
 
         model = None
         model_no = icls[i] if n_classes_ <= base_classes_ else ( base_classes_/2 if icls[i] % (base_classes_/2) == 0 else icls[i] % (base_classes_/2) )
