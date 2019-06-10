@@ -54,8 +54,12 @@ ABS_PATh = os.path.dirname(os.path.abspath(__file__)) + "/"
 model = None
 import os.path
 
+is_debug = True
+is_evaluation_mode = False
 if os.path.isfile(modelfile_path.replace( '{icls}', '1' )): 
     model = load_model( modelfile_path.replace( '{icls}', '1' ) ) 
+    if not model == None:
+        is_evaluation_mode = True
     
 # input image dimensions
 img_rows, img_cols = rows, cols   #28, 28
@@ -63,6 +67,10 @@ img_rows, img_cols = rows, cols   #28, 28
 x_test = input_to_be_predicted
 y_test = None
 
+
+#
+if is_debug:
+    print( "n_classes_ " + str(n_classes_) )
 
 def RNN():
     inputs = Input(name='inputs',shape=[max_len])
@@ -187,6 +195,7 @@ for i in range(0, n_classes_):
             print("processing icls " + str(icls[i]))
         else:
             print("skipping icls " + str(icls[i]))
+            continue
 
         model = None
         model_no = icls[i] if n_classes_ <= base_classes_ else ( base_classes_/2 if icls[i] % (base_classes_/2) == 0 else icls[i] % (base_classes_/2) )
@@ -194,8 +203,15 @@ for i in range(0, n_classes_):
         if os.path.isfile(modelfile_path.replace( '{icls}', str( model_no ) )): 
             model = load_model( modelfile_path.replace( '{icls}', str( model_no ) ) )    
 
+        print("model_no " + str(model_no) + " base_classes_ " + str(base_classes_) + " ")
+            
         if is_sample_debug_only == 0:    
 
+            #
+            if is_evaluation_mode == True and model == None:
+                print( "Fatal error! Model not found in evauation mode" )
+                sdfkjhkdsjfhkjdshf
+        
             num_classes = 2 #n_classes_ #10
             if model == None:    
                 X = array( Xs[ icls[i] ] )
@@ -309,29 +325,38 @@ for i in range(0, n_classes_):
             #input_to_be_predicted = x_test    
 
             try:
-                print("target")
-                print( y_test )
+                if is_debug:
+                    print("input")
+                    print( x_test.shape )
+                    print( x_test )
+                    print("target")
+                    print( y_test )
 
                 prob_results = model.predict( x_test )
                 res = prob_results.argmax(axis=-1)
-                print("result")
                 unique, counts = np.unique(res, return_counts=True)
-                print( dict(zip(unique, counts)) )
+                
+                if is_debug:
+                    print("result")
+                    print( dict(zip(unique, counts)) )
+                    
                 class_0_prob, class_1_prob = zip(*prob_results)
                 class_0_prob = np.array( class_0_prob )
                 class_1_prob = np.array( class_1_prob )
-                print( "class 0 prob > 0.9 " + str( ( (0.9 < class_0_prob) ).sum() ) )
-                print( "class 0 prob > 0.8 & <= 0.9 " + str( ((0.8 < class_0_prob) & (class_0_prob <= 0.9)).sum() ) )
-                print( "class 0 prob > 0.7 & <= 0.8 " + str( ((0.7 < class_0_prob) & (class_0_prob <= 0.8)).sum() ) )
-                print( "class 0 prob > 0.6 & <= 0.7 " + str( ((0.6 < class_0_prob) & (class_0_prob <= 0.7)).sum() ) )
-                print( "class 0 prob > 0.5 & <= 0.6 " + str( ((0.5 < class_0_prob) & (class_0_prob <= 0.6)).sum() ) )
-                print( "class 1 prob > 0.9 " + str( ( (0.9 < class_1_prob) ).sum() ) )
-                print( "class 1 prob > 0.8 & <= 0.9 " + str( ((0.8 < class_1_prob) & (class_1_prob <= 0.9)).sum() ) )
-                print( "class 1 prob > 0.7 & <= 0.8 " + str( ((0.7 < class_1_prob) & (class_1_prob <= 0.8)).sum() ) )
-                print( "class 1 prob > 0.6 & <= 0.7 " + str( ((0.6 < class_1_prob) & (class_1_prob <= 0.7)).sum() ) )
-                print( "class 1 prob > 0.5 & <= 0.6 " + str( ((0.5 < class_1_prob) & (class_1_prob <= 0.6)).sum() ) )
-                print(res) 
-                print(prob_results)
+                
+                if is_debug:
+                    print( "class 0 prob > 0.9 " + str( ( (0.9 < class_0_prob) ).sum() ) )
+                    print( "class 0 prob > 0.8 & <= 0.9 " + str( ((0.8 < class_0_prob) & (class_0_prob <= 0.9)).sum() ) )
+                    print( "class 0 prob > 0.7 & <= 0.8 " + str( ((0.7 < class_0_prob) & (class_0_prob <= 0.8)).sum() ) )
+                    print( "class 0 prob > 0.6 & <= 0.7 " + str( ((0.6 < class_0_prob) & (class_0_prob <= 0.7)).sum() ) )
+                    print( "class 0 prob > 0.5 & <= 0.6 " + str( ((0.5 < class_0_prob) & (class_0_prob <= 0.6)).sum() ) )
+                    print( "class 1 prob > 0.9 " + str( ( (0.9 < class_1_prob) ).sum() ) )
+                    print( "class 1 prob > 0.8 & <= 0.9 " + str( ((0.8 < class_1_prob) & (class_1_prob <= 0.9)).sum() ) )
+                    print( "class 1 prob > 0.7 & <= 0.8 " + str( ((0.7 < class_1_prob) & (class_1_prob <= 0.8)).sum() ) )
+                    print( "class 1 prob > 0.6 & <= 0.7 " + str( ((0.6 < class_1_prob) & (class_1_prob <= 0.7)).sum() ) )
+                    print( "class 1 prob > 0.5 & <= 0.6 " + str( ((0.5 < class_1_prob) & (class_1_prob <= 0.6)).sum() ) )
+                    print(res) 
+                    print(prob_results)
                 
                 res_all[icls[i]] = res 
                 prob_results_all[icls[i]] = prob_results 
@@ -376,272 +401,273 @@ if not outfile_path_prob == None:
         json.dump(prob_results.tolist(), outfile)                      
                 
             
-for i in range(0, n_classes_):
-    if (i+1) % 2 == 0:
-        X = array( Xs[ icls[i] ] )
-        Y = array( Ys[ icls[i] ] )
-        
-        x_test = array( input_to_be_predictedXs[ icls[i] ] )
-        y_test = array( input_to_be_predictedYs[ icls[i] ] )
+if is_evaluation_mode == False:
+    for i in range(0, n_classes_):
+        if (i+1) % 2 == 0:
+            X = array( Xs[ icls[i] ] )
+            Y = array( Ys[ icls[i] ] )
             
-        # in dev mode 
-        if ENV == 1:
-            from matplotlib import pyplot as plt
-            
-            #check sample accuracy 
-            if False:
-                while(True):
-                    """
-                    columns = 10
-                    rows = 4
-                    fig, ax_array = plt.subplots(rows, columns,squeeze=False)
-                    for i,ax_row in enumerate(ax_array):
-                        for j,axes in enumerate(ax_row):
-                            axes.set_title('{},{}'.format(i,j))
-                            axes.set_yticklabels([])
-                            axes.set_xticklabels([])
-                            
-                    #         axes.plot(you_data_goes_here,'r-')
-                    plt.show()
-                    """
+            x_test = array( input_to_be_predictedXs[ icls[i] ] )
+            y_test = array( input_to_be_predictedYs[ icls[i] ] )
+                
+            # in dev mode 
+            if ENV == 1:
+                from matplotlib import pyplot as plt
+                
+                #check sample accuracy 
+                if False:
+                    while(True):
+                        """
+                        columns = 10
+                        rows = 4
+                        fig, ax_array = plt.subplots(rows, columns,squeeze=False)
+                        for i,ax_row in enumerate(ax_array):
+                            for j,axes in enumerate(ax_row):
+                                axes.set_title('{},{}'.format(i,j))
+                                axes.set_yticklabels([])
+                                axes.set_xticklabels([])
+                                
+                        #         axes.plot(you_data_goes_here,'r-')
+                        plt.show()
+                        """
+                        sample_index = 0 
+                        size_sample = len(Y)
+                        for idx in range(1, 20):
+                            if sample_index < size_sample:
+                                plt.subplot(4, 5, idx)
+                                plt.plot( X[sample_index], color= "red" if Y[sample_index] == 0 else "blue" ) 
+                                
+                                sample_index = sample_index + 1
+                
+                        plt.show()
+                        if sample_index >= size_sample:
+                            break
+
+                #debug by samples
+                if False:
                     sample_index = 0 
                     size_sample = len(Y)
-                    for idx in range(1, 20):
-                        if sample_index < size_sample:
-                            plt.subplot(4, 5, idx)
-                            plt.plot( X[sample_index], color= "red" if Y[sample_index] == 0 else "blue" ) 
-                            
-                            sample_index = sample_index + 1
-            
-                    plt.show()
-                    if sample_index >= size_sample:
-                        break
-
-            #debug by samples
-            if False:
-                sample_index = 0 
-                size_sample = len(Y)
-                last_shown_index = -1
-                show_step = 500  #500
-                while(True):
-                    """
-                    columns = 10
-                    rows = 4
-                    fig, ax_array = plt.subplots(rows, columns,squeeze=False)
-                    for i,ax_row in enumerate(ax_array):
-                        for j,axes in enumerate(ax_row):
-                            axes.set_title('{},{}'.format(i,j))
-                            axes.set_yticklabels([])
-                            axes.set_xticklabels([])
-                            
-                    #         axes.plot(you_data_goes_here,'r-')
-                    plt.show()
-                    """
-                    
-                    #show as much as fit in window
-                    last_index_covered = -1
-                    last_class_covered = -1
-                    idx = 0
+                    last_shown_index = -1
+                    show_step = 500  #500
                     while(True):
-                        if sample_index < size_sample:
-                            if not last_shown_index == -1 and sample_index - last_shown_index < show_step:
-                                sample_index = sample_index + 1
-                                continue
-                        
-                            if not last_class_covered == -1 and not last_index_covered == sample_index and last_class_covered == Y[sample_index]:
-                                sample_index = sample_index + 1
-                                continue
-                        
-                            idx = idx + 1
-                            last_index_covered = sample_index
-                            if last_class_covered == -1:
-                                last_class_covered = Y[sample_index]
+                        """
+                        columns = 10
+                        rows = 4
+                        fig, ax_array = plt.subplots(rows, columns,squeeze=False)
+                        for i,ax_row in enumerate(ax_array):
+                            for j,axes in enumerate(ax_row):
+                                axes.set_title('{},{}'.format(i,j))
+                                axes.set_yticklabels([])
+                                axes.set_xticklabels([])
                                 
-                            ax = plt.subplot(img_rows, 2, idx)
-                            ax.set_title( "idx = " + str(idx) )
+                        #         axes.plot(you_data_goes_here,'r-')
+                        plt.show()
+                        """
+                        
+                        #show as much as fit in window
+                        last_index_covered = -1
+                        last_class_covered = -1
+                        idx = 0
+                        while(True):
+                            if sample_index < size_sample:
+                                if not last_shown_index == -1 and sample_index - last_shown_index < show_step:
+                                    sample_index = sample_index + 1
+                                    continue
                             
-                            modr = idx%img_rows
-                            if modr == 0:
-                                modr = img_rows
+                                if not last_class_covered == -1 and not last_index_covered == sample_index and last_class_covered == Y[sample_index]:
+                                    sample_index = sample_index + 1
+                                    continue
                             
-                            print( X[sample_index][ ( img_cols * ( modr - 1 ) ) : ( img_cols * modr ) ] )
-                            plt.plot( X[sample_index][ ( img_cols * ( modr - 1 ) ) : ( img_cols * modr ) ], color= "red" if Y[sample_index] == 0 else "blue" ) 
-                            
-                            if idx % img_rows == 0:
-                                last_shown_index = sample_index
-                            
-                                sample_index = sample_index + 1
+                                idx = idx + 1
+                                last_index_covered = sample_index
+                                if last_class_covered == -1:
+                                    last_class_covered = Y[sample_index]
+                                    
+                                ax = plt.subplot(img_rows, 2, idx)
+                                ax.set_title( "idx = " + str(idx) )
                                 
-                                if not last_class_covered == Y[last_index_covered]:                        
-                                    break
-            
-                    plt.show()
-                    if sample_index >= size_sample:
-                        break
-                        
-            #debug 
-            X_cls1_wrong = []
-            X_cls2_wrong = []
-            
-            X_cls1_wrong_prob = []
-            X_cls2_wrong_prob = []
-
-            X_cls1_right = []
-            X_cls2_right = []
-            
-            X_cls1_right_prob = []
-            X_cls2_right_prob = []
-            
-            X_cls1_wrong_prob_cnt = {}
-            X_cls2_wrong_prob_cnt = {}
-            X_cls1_wrong_prob_cnt["09_100"] = 0
-            X_cls1_wrong_prob_cnt["08_9"] = 0
-            X_cls1_wrong_prob_cnt["07_8"] = 0
-            X_cls1_wrong_prob_cnt["06_7"] = 0
-            X_cls1_wrong_prob_cnt["05_6"] = 0
-            X_cls2_wrong_prob_cnt["09_100"] = 0
-            X_cls2_wrong_prob_cnt["08_9"] = 0
-            X_cls2_wrong_prob_cnt["07_8"] = 0
-            X_cls2_wrong_prob_cnt["06_7"] = 0
-            X_cls2_wrong_prob_cnt["05_6"] = 0
-
-            X_cls1_right_prob_cnt = {}
-            X_cls2_right_prob_cnt = {}
-            X_cls1_right_prob_cnt["09_100"] = 0
-            X_cls1_right_prob_cnt["08_9"] = 0
-            X_cls1_right_prob_cnt["07_8"] = 0
-            X_cls1_right_prob_cnt["06_7"] = 0
-            X_cls1_right_prob_cnt["05_6"] = 0
-            X_cls2_right_prob_cnt["09_100"] = 0
-            X_cls2_right_prob_cnt["08_9"] = 0
-            X_cls2_right_prob_cnt["07_8"] = 0
-            X_cls2_right_prob_cnt["06_7"] = 0
-            X_cls2_right_prob_cnt["05_6"] = 0
-
-            
-            X = x_test
-            Y = y_test
-            
-            Y_tmp = res
-            Y_tmp_prob = prob_results
-            unique, counts = np.unique(input_to_be_predicted_labels, return_counts=True)
-            cnts = dict(zip(unique, counts))
-            #cnt1 = cnts[0]
-            #cnt2 = cnts[1]
-            print( cnts )
-            #print( "cnt1 " + str(cnt1) + " cnt2 " + str(cnt2) )
-            size1 = len(input_to_be_predicted_labels)
-            
-            #big_class = 0 if cnt1 > cnt2 else 1
-            for idx in range(0, size1):
-                #TODO temp 
-                #size2 = len(X[idx])
-                #for idx2 in range(0, size2):
-                #    X[idx][idx2] = X[idx][idx2] - 1000 if X[idx][idx2] > 1000 else X[idx][idx2]
-            
-                #if Y_tmp[idx] == 0 and not Y_tmp[idx] == Y[idx] and Y_tmp_prob[idx][0] >= 0.9999 and len(X_cls1_wrong) < 10000:
-                if Y_tmp[idx] == 0 and not Y_tmp[idx] == Y[idx] and len(X_cls1_wrong) < 10000:
-                    X_cls1_wrong.append(X[idx])
-                    X_cls1_wrong_prob.append(Y_tmp_prob[idx][0])
-                    
-                    if Y_tmp_prob[idx][0] >= 0.9:
-                        X_cls1_wrong_prob_cnt["09_100"] = X_cls1_wrong_prob_cnt["09_100"] + 1
-                    elif Y_tmp_prob[idx][0] >= 0.8:
-                        X_cls1_wrong_prob_cnt["08_9"] = X_cls1_wrong_prob_cnt["08_9"] + 1
-                    elif Y_tmp_prob[idx][0] >= 0.7:
-                        X_cls1_wrong_prob_cnt["07_8"] = X_cls1_wrong_prob_cnt["07_8"] + 1
-                    elif Y_tmp_prob[idx][0] >= 0.6:
-                        X_cls1_wrong_prob_cnt["06_7"] = X_cls1_wrong_prob_cnt["06_7"] + 1
-                    elif Y_tmp_prob[idx][0] >= 0.5:
-                        X_cls1_wrong_prob_cnt["05_6"] = X_cls1_wrong_prob_cnt["05_6"] + 1
-                    
-                #elif Y_tmp[idx] == 1 and not Y_tmp[idx] == Y[idx] and Y_tmp_prob[idx][1] >= 0.9999 and len(X_cls2_wrong) < 10000:
-                elif Y_tmp[idx] == 1 and not Y_tmp[idx] == Y[idx] and len(X_cls2_wrong) < 10000:
-                    X_cls2_wrong.append(X[idx])
-                    X_cls2_wrong_prob.append(Y_tmp_prob[idx][1])
-                    
-                    if Y_tmp_prob[idx][1] >= 0.9:
-                        X_cls2_wrong_prob_cnt["09_100"] = X_cls2_wrong_prob_cnt["09_100"] + 1
-                    elif Y_tmp_prob[idx][1] >= 0.8:
-                        X_cls2_wrong_prob_cnt["08_9"] = X_cls2_wrong_prob_cnt["08_9"] + 1
-                    elif Y_tmp_prob[idx][1] >= 0.7:
-                        X_cls2_wrong_prob_cnt["07_8"] = X_cls2_wrong_prob_cnt["07_8"] + 1
-                    elif Y_tmp_prob[idx][1] >= 0.6:
-                        X_cls2_wrong_prob_cnt["06_7"] = X_cls2_wrong_prob_cnt["06_7"] + 1
-                    elif Y_tmp_prob[idx][1] >= 0.5:
-                        X_cls2_wrong_prob_cnt["05_6"] = X_cls2_wrong_prob_cnt["05_6"] + 1
-                        
-                elif Y_tmp[idx] == 0:
-                    X_cls1_right.append(X[idx])
-                    X_cls1_right_prob.append(Y_tmp_prob[idx][0])
-                    
-                    if Y_tmp_prob[idx][0] >= 0.9:
-                        X_cls1_right_prob_cnt["09_100"] = X_cls1_right_prob_cnt["09_100"] + 1
-                    elif Y_tmp_prob[idx][0] >= 0.8:
-                        X_cls1_right_prob_cnt["08_9"] = X_cls1_right_prob_cnt["08_9"] + 1
-                    elif Y_tmp_prob[idx][0] >= 0.7:
-                        X_cls1_right_prob_cnt["07_8"] = X_cls1_right_prob_cnt["07_8"] + 1
-                    elif Y_tmp_prob[idx][0] >= 0.6:
-                        X_cls1_right_prob_cnt["06_7"] = X_cls1_right_prob_cnt["06_7"] + 1
-                    elif Y_tmp_prob[idx][0] >= 0.5:
-                        X_cls1_right_prob_cnt["05_6"] = X_cls1_right_prob_cnt["05_6"] + 1
-                    
-                elif Y_tmp[idx] == 1:
-                    X_cls2_right.append(X[idx])
-                    X_cls2_right_prob.append(Y_tmp_prob[idx][1])
-                    
-                    if Y_tmp_prob[idx][1] >= 0.9:
-                        X_cls2_right_prob_cnt["09_100"] = X_cls2_right_prob_cnt["09_100"] + 1
-                    elif Y_tmp_prob[idx][1] >= 0.8:
-                        X_cls2_right_prob_cnt["08_9"] = X_cls2_right_prob_cnt["08_9"] + 1
-                    elif Y_tmp_prob[idx][1] >= 0.7:
-                        X_cls2_right_prob_cnt["07_8"] = X_cls2_right_prob_cnt["07_8"] + 1
-                    elif Y_tmp_prob[idx][1] >= 0.6:
-                        X_cls2_right_prob_cnt["06_7"] = X_cls2_right_prob_cnt["06_7"] + 1
-                    elif Y_tmp_prob[idx][1] >= 0.5:
-                        X_cls2_right_prob_cnt["05_6"] = X_cls2_right_prob_cnt["05_6"] + 1                    
-            
-            print( "X_cls1_wrong " + str(len(X_cls1_wrong)) )
-            print( "X_cls2_wrong " + str(len(X_cls2_wrong)) )
-            print( "X_cls1_wrong_prob_cnt " + str(X_cls1_wrong_prob_cnt) )
-            print( "X_cls2_wrong_prob_cnt " + str(X_cls2_wrong_prob_cnt) )
-            print( "X_cls1_right_prob_cnt " + str(X_cls1_right_prob_cnt) )
-            print( "X_cls2_right_prob_cnt " + str(X_cls2_right_prob_cnt) )
-            if len(X_cls1_wrong) > 0 or len(X_cls2_wrong) > 0 or len(X_cls1_right) > 0 or len(X_cls1_right) > 0:
-                sizeloop = len(X_cls1_wrong) if len(X_cls1_wrong) > len(X_cls2_wrong) else len(X_cls2_wrong)
-                sizeloop = len(X_cls1_right) if len(X_cls1_right) > sizeloop else sizeloop
-                sizeloop = len(X_cls2_right) if len(X_cls2_right) > sizeloop else sizeloop
+                                modr = idx%img_rows
+                                if modr == 0:
+                                    modr = img_rows
+                                
+                                print( X[sample_index][ ( img_cols * ( modr - 1 ) ) : ( img_cols * modr ) ] )
+                                plt.plot( X[sample_index][ ( img_cols * ( modr - 1 ) ) : ( img_cols * modr ) ], color= "red" if Y[sample_index] == 0 else "blue" ) 
+                                
+                                if idx % img_rows == 0:
+                                    last_shown_index = sample_index
+                                
+                                    sample_index = sample_index + 1
+                                    
+                                    if not last_class_covered == Y[last_index_covered]:                        
+                                        break
                 
-                for idx in range(0, sizeloop):
-                    is_plot = False
-                
-                    if len(X_cls1_wrong) > idx:
-                        print( "X_cls1_wrong prob " + str(X_cls1_wrong_prob[idx]) )
-                        
-                        is_plot = True
-                        plt.subplot(2, 2, 1)
-                        plt.plot( X_cls1_wrong[idx], color="red") 
-
-                    if len(X_cls2_wrong) > idx:
-                        print( "X_cls2_wrong prob " + str(X_cls2_wrong_prob[idx]) )
-                        
-                        is_plot = True
-                        plt.subplot(2, 2, 2)
-                        plt.plot( X_cls2_wrong[idx], color="blue") 
+                        plt.show()
+                        if sample_index >= size_sample:
+                            break
                             
-                    if len(X_cls1_right) > idx:
-                        print( "X_cls1_right prob " + str(X_cls1_right_prob[idx]) )
-                        
-                        is_plot = True
-                        plt.subplot(2, 2, 3)
-                        plt.plot( X_cls1_right[idx], color="red") 
+                #debug 
+                X_cls1_wrong = []
+                X_cls2_wrong = []
+                
+                X_cls1_wrong_prob = []
+                X_cls2_wrong_prob = []
 
-                    if len(X_cls2_right) > idx:
-                        print( "X_cls2_right prob " + str(X_cls2_right_prob[idx]) )
-                        
-                        is_plot = True
-                        plt.subplot(2, 2, 4)
-                        plt.plot( X_cls2_right[idx], color="blue")                         
+                X_cls1_right = []
+                X_cls2_right = []
+                
+                X_cls1_right_prob = []
+                X_cls2_right_prob = []
+                
+                X_cls1_wrong_prob_cnt = {}
+                X_cls2_wrong_prob_cnt = {}
+                X_cls1_wrong_prob_cnt["09_100"] = 0
+                X_cls1_wrong_prob_cnt["08_9"] = 0
+                X_cls1_wrong_prob_cnt["07_8"] = 0
+                X_cls1_wrong_prob_cnt["06_7"] = 0
+                X_cls1_wrong_prob_cnt["05_6"] = 0
+                X_cls2_wrong_prob_cnt["09_100"] = 0
+                X_cls2_wrong_prob_cnt["08_9"] = 0
+                X_cls2_wrong_prob_cnt["07_8"] = 0
+                X_cls2_wrong_prob_cnt["06_7"] = 0
+                X_cls2_wrong_prob_cnt["05_6"] = 0
 
-                    if is_plot == True:
-                        plt.show()        
+                X_cls1_right_prob_cnt = {}
+                X_cls2_right_prob_cnt = {}
+                X_cls1_right_prob_cnt["09_100"] = 0
+                X_cls1_right_prob_cnt["08_9"] = 0
+                X_cls1_right_prob_cnt["07_8"] = 0
+                X_cls1_right_prob_cnt["06_7"] = 0
+                X_cls1_right_prob_cnt["05_6"] = 0
+                X_cls2_right_prob_cnt["09_100"] = 0
+                X_cls2_right_prob_cnt["08_9"] = 0
+                X_cls2_right_prob_cnt["07_8"] = 0
+                X_cls2_right_prob_cnt["06_7"] = 0
+                X_cls2_right_prob_cnt["05_6"] = 0
+
+                
+                X = x_test
+                Y = y_test
+                
+                Y_tmp = res
+                Y_tmp_prob = prob_results
+                unique, counts = np.unique(input_to_be_predicted_labels, return_counts=True)
+                cnts = dict(zip(unique, counts))
+                #cnt1 = cnts[0]
+                #cnt2 = cnts[1]
+                print( cnts )
+                #print( "cnt1 " + str(cnt1) + " cnt2 " + str(cnt2) )
+                size1 = len(input_to_be_predicted_labels)
+                
+                #big_class = 0 if cnt1 > cnt2 else 1
+                for idx in range(0, size1):
+                    #TODO temp 
+                    #size2 = len(X[idx])
+                    #for idx2 in range(0, size2):
+                    #    X[idx][idx2] = X[idx][idx2] - 1000 if X[idx][idx2] > 1000 else X[idx][idx2]
+                
+                    #if Y_tmp[idx] == 0 and not Y_tmp[idx] == Y[idx] and Y_tmp_prob[idx][0] >= 0.9999 and len(X_cls1_wrong) < 10000:
+                    if Y_tmp[idx] == 0 and not Y_tmp[idx] == Y[idx] and len(X_cls1_wrong) < 10000:
+                        X_cls1_wrong.append(X[idx])
+                        X_cls1_wrong_prob.append(Y_tmp_prob[idx][0])
+                        
+                        if Y_tmp_prob[idx][0] >= 0.9:
+                            X_cls1_wrong_prob_cnt["09_100"] = X_cls1_wrong_prob_cnt["09_100"] + 1
+                        elif Y_tmp_prob[idx][0] >= 0.8:
+                            X_cls1_wrong_prob_cnt["08_9"] = X_cls1_wrong_prob_cnt["08_9"] + 1
+                        elif Y_tmp_prob[idx][0] >= 0.7:
+                            X_cls1_wrong_prob_cnt["07_8"] = X_cls1_wrong_prob_cnt["07_8"] + 1
+                        elif Y_tmp_prob[idx][0] >= 0.6:
+                            X_cls1_wrong_prob_cnt["06_7"] = X_cls1_wrong_prob_cnt["06_7"] + 1
+                        elif Y_tmp_prob[idx][0] >= 0.5:
+                            X_cls1_wrong_prob_cnt["05_6"] = X_cls1_wrong_prob_cnt["05_6"] + 1
+                        
+                    #elif Y_tmp[idx] == 1 and not Y_tmp[idx] == Y[idx] and Y_tmp_prob[idx][1] >= 0.9999 and len(X_cls2_wrong) < 10000:
+                    elif Y_tmp[idx] == 1 and not Y_tmp[idx] == Y[idx] and len(X_cls2_wrong) < 10000:
+                        X_cls2_wrong.append(X[idx])
+                        X_cls2_wrong_prob.append(Y_tmp_prob[idx][1])
+                        
+                        if Y_tmp_prob[idx][1] >= 0.9:
+                            X_cls2_wrong_prob_cnt["09_100"] = X_cls2_wrong_prob_cnt["09_100"] + 1
+                        elif Y_tmp_prob[idx][1] >= 0.8:
+                            X_cls2_wrong_prob_cnt["08_9"] = X_cls2_wrong_prob_cnt["08_9"] + 1
+                        elif Y_tmp_prob[idx][1] >= 0.7:
+                            X_cls2_wrong_prob_cnt["07_8"] = X_cls2_wrong_prob_cnt["07_8"] + 1
+                        elif Y_tmp_prob[idx][1] >= 0.6:
+                            X_cls2_wrong_prob_cnt["06_7"] = X_cls2_wrong_prob_cnt["06_7"] + 1
+                        elif Y_tmp_prob[idx][1] >= 0.5:
+                            X_cls2_wrong_prob_cnt["05_6"] = X_cls2_wrong_prob_cnt["05_6"] + 1
+                            
+                    elif Y_tmp[idx] == 0:
+                        X_cls1_right.append(X[idx])
+                        X_cls1_right_prob.append(Y_tmp_prob[idx][0])
+                        
+                        if Y_tmp_prob[idx][0] >= 0.9:
+                            X_cls1_right_prob_cnt["09_100"] = X_cls1_right_prob_cnt["09_100"] + 1
+                        elif Y_tmp_prob[idx][0] >= 0.8:
+                            X_cls1_right_prob_cnt["08_9"] = X_cls1_right_prob_cnt["08_9"] + 1
+                        elif Y_tmp_prob[idx][0] >= 0.7:
+                            X_cls1_right_prob_cnt["07_8"] = X_cls1_right_prob_cnt["07_8"] + 1
+                        elif Y_tmp_prob[idx][0] >= 0.6:
+                            X_cls1_right_prob_cnt["06_7"] = X_cls1_right_prob_cnt["06_7"] + 1
+                        elif Y_tmp_prob[idx][0] >= 0.5:
+                            X_cls1_right_prob_cnt["05_6"] = X_cls1_right_prob_cnt["05_6"] + 1
+                        
+                    elif Y_tmp[idx] == 1:
+                        X_cls2_right.append(X[idx])
+                        X_cls2_right_prob.append(Y_tmp_prob[idx][1])
+                        
+                        if Y_tmp_prob[idx][1] >= 0.9:
+                            X_cls2_right_prob_cnt["09_100"] = X_cls2_right_prob_cnt["09_100"] + 1
+                        elif Y_tmp_prob[idx][1] >= 0.8:
+                            X_cls2_right_prob_cnt["08_9"] = X_cls2_right_prob_cnt["08_9"] + 1
+                        elif Y_tmp_prob[idx][1] >= 0.7:
+                            X_cls2_right_prob_cnt["07_8"] = X_cls2_right_prob_cnt["07_8"] + 1
+                        elif Y_tmp_prob[idx][1] >= 0.6:
+                            X_cls2_right_prob_cnt["06_7"] = X_cls2_right_prob_cnt["06_7"] + 1
+                        elif Y_tmp_prob[idx][1] >= 0.5:
+                            X_cls2_right_prob_cnt["05_6"] = X_cls2_right_prob_cnt["05_6"] + 1                    
+                
+                print( "X_cls1_wrong " + str(len(X_cls1_wrong)) )
+                print( "X_cls2_wrong " + str(len(X_cls2_wrong)) )
+                print( "X_cls1_wrong_prob_cnt " + str(X_cls1_wrong_prob_cnt) )
+                print( "X_cls2_wrong_prob_cnt " + str(X_cls2_wrong_prob_cnt) )
+                print( "X_cls1_right_prob_cnt " + str(X_cls1_right_prob_cnt) )
+                print( "X_cls2_right_prob_cnt " + str(X_cls2_right_prob_cnt) )
+                if len(X_cls1_wrong) > 0 or len(X_cls2_wrong) > 0 or len(X_cls1_right) > 0 or len(X_cls1_right) > 0:
+                    sizeloop = len(X_cls1_wrong) if len(X_cls1_wrong) > len(X_cls2_wrong) else len(X_cls2_wrong)
+                    sizeloop = len(X_cls1_right) if len(X_cls1_right) > sizeloop else sizeloop
+                    sizeloop = len(X_cls2_right) if len(X_cls2_right) > sizeloop else sizeloop
+                    
+                    for idx in range(0, sizeloop):
+                        is_plot = False
+                    
+                        if len(X_cls1_wrong) > idx:
+                            print( "X_cls1_wrong prob " + str(X_cls1_wrong_prob[idx]) )
+                            
+                            is_plot = True
+                            plt.subplot(2, 2, 1)
+                            plt.plot( X_cls1_wrong[idx], color="red") 
+
+                        if len(X_cls2_wrong) > idx:
+                            print( "X_cls2_wrong prob " + str(X_cls2_wrong_prob[idx]) )
+                            
+                            is_plot = True
+                            plt.subplot(2, 2, 2)
+                            plt.plot( X_cls2_wrong[idx], color="blue") 
+                                
+                        if len(X_cls1_right) > idx:
+                            print( "X_cls1_right prob " + str(X_cls1_right_prob[idx]) )
+                            
+                            is_plot = True
+                            plt.subplot(2, 2, 3)
+                            plt.plot( X_cls1_right[idx], color="red") 
+
+                        if len(X_cls2_right) > idx:
+                            print( "X_cls2_right prob " + str(X_cls2_right_prob[idx]) )
+                            
+                            is_plot = True
+                            plt.subplot(2, 2, 4)
+                            plt.plot( X_cls2_right[idx], color="blue")                         
+
+                        if is_plot == True:
+                            plt.show()        
