@@ -26,6 +26,8 @@ from numpy import array
 import numpy as np
 import random
 
+import threading 
+
 ENV = int(sys.argv[1]) if len(sys.argv) >= 2 else 0
 
 to_be_predicted_index = -1 
@@ -47,6 +49,7 @@ modelfile_path = sys.argv[18] if len(sys.argv) >= 19 else None
 
 is_sample_debug_only = int(sys.argv[20]) if len(sys.argv) >= 21 else 0
 
+is_python_mutli_threading_inside_process = int(sys.argv[23]) if len(sys.argv) >= 24 else 0
 
 #use absolute paths
 ABS_PATh = os.path.dirname(os.path.abspath(__file__)) + "/"
@@ -70,6 +73,7 @@ y_test = None
 
 #
 if is_debug:
+    print( "input file path " + sys.argv[3] )
     print( "n_classes_ " + str(n_classes_) )
 
 def RNN():
@@ -144,6 +148,7 @@ res_all = {}
 prob_results_all = {}
 
 import math
+#set classes 
 for i in range(0, n_classes_):
     icls[i] = int( math.ceil( (i+1) / 2 ) )
     Xs[ icls[i] ] = []
@@ -151,6 +156,7 @@ for i in range(0, n_classes_):
     input_to_be_predictedXs[ icls[i] ] = []
     input_to_be_predictedYs[ icls[i] ] = []
 
+#prepare training data 
 if is_sample_debug_only == 1 or model == None:    
         #
         print( "(!) Merging inputs, should only be executed in training mode." )
@@ -183,12 +189,13 @@ if is_sample_debug_only == 1 or model == None:
         Xs[ 2 ], Ys[ 2 ] = randomize( Xs[ 2 ], Ys[ 2 ] )
         #Xs[ 2 ], Ys[ 2 ] = make_equal( Xs[ 2 ], Ys[ 2 ], 0, 1 )
             
+#prepare evaluation/test mode data 
 sizetestx = len(x_test)
 for i in range(0, sizetestx):
     input_to_be_predictedXs[ icls[input_to_be_predicted_labels[i]] ].append( x_test[i] )
     input_to_be_predictedYs[ icls[input_to_be_predicted_labels[i]] ].append( input_to_be_predicted_labels[i] % 2 )
             
-            
+#train or evaluate model             
 for i in range(0, n_classes_):
     if (i+1) % 2 == 0:
         if len( input_to_be_predictedYs[ icls[i] ] ) > 0:
@@ -209,7 +216,7 @@ for i in range(0, n_classes_):
 
             #
             if is_evaluation_mode == True and model == None:
-                print( "Fatal error! Model not found in evauation mode" )
+                print( "Fatal error! Model not found in evaluation mode" )
                 sdfkjhkdsjfhkjdshf
         
             num_classes = 2 #n_classes_ #10
@@ -370,7 +377,7 @@ for i in range(0, n_classes_):
                 print( msg )
 
 
-#          
+#prepare results data 
 res = []
 prob_results = []  
 cnts = {}
