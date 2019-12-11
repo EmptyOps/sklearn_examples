@@ -41,6 +41,9 @@ else:
             data = np.concatenate( ( data, array( json.load( open( FLAGS.input_file.replace('{i}', str(i)) ) ) ) ), axis=0 )
             input_labels = np.concatenate( ( input_labels, array( json.load( open( FLAGS.input_labels_file.replace('{i}', str(i)) ) ) ) ), axis=0 )
     
+    print(data.shape)
+    data = data.reshape((data.shape[0], -1))
+    print(data.shape)
 
 # normality test
 stat, p = shapiro(data)
