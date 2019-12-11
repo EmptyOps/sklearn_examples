@@ -48,9 +48,31 @@ print('Statistics=%.3f, p=%.3f' % (stat, p))
 # interpret
 alpha = 0.05
 if p > alpha:
-    print('Sample looks Gaussian (fail to reject H0)')
+    print('shapiro test. Sample looks Gaussian (fail to reject H0)')
 else:
-    print('Sample does not look Gaussian (reject H0)')
-
+    print('shapiro test. Sample does not look Gaussian (reject H0)')
 
     
+from scipy.stats import normaltest
+# normality test
+stat, p = normaltest(data)
+print('Statistics=%.3f, p=%.3f' % (stat, p))
+# interpret
+alpha = 0.05
+if p > alpha:
+	print('scipy.stats.normaltest test. Sample looks Gaussian (fail to reject H0)')
+else:
+	print('scipy.stats.normaltest test. Sample does not look Gaussian (reject H0)')    
+
+    
+from scipy.stats import anderson
+# normality test
+result = anderson(data)
+print('Statistic: %.3f' % result.statistic)
+p = 0
+for i in range(len(result.critical_values)):
+	sl, cv = result.significance_level[i], result.critical_values[i]
+	if result.statistic < result.critical_values[i]:
+		print('anderson test. %.3f: %.3f, data looks normal (fail to reject H0)' % (sl, cv))
+	else:
+		print('anderson test. %.3f: %.3f, data does not look normal (reject H0)' % (sl, cv))    
