@@ -3,6 +3,8 @@ from numpy.random import seed
 from numpy.random import randn
 from scipy.stats import shapiro
 
+import numpy as np
+from numpy import array
 
 # Parse options
 import argparse
