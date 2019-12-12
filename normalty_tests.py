@@ -62,10 +62,10 @@ else:
         print(data.shape)
         
         from sklearn.decomposition import PCA
-        p = PCA(n_components = 1600).fit_transform(data)
-        print( type(p) )
-        print( p )
-        print( p.shape )
+        data = PCA(n_components = FLAGS.pca_components).fit_transform(data)
+        print( type(data) )
+        print( data )
+        print( data.shape )
     
 
 # normality test
