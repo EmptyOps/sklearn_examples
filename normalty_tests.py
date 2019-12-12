@@ -85,7 +85,7 @@ stat, p = normaltest(data)
 print('Statistics ' , stat, ' p ', p)
 # interpret
 alpha = 0.05
-if p > alpha:
+if p.any() > alpha:
 	print('scipy.stats.normaltest test. Sample looks Gaussian (fail to reject H0)')
 else:
 	print('scipy.stats.normaltest test. Sample does not look Gaussian (reject H0)')    
