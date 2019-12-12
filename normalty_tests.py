@@ -19,7 +19,7 @@ parser.add_argument('-t', '--total_input_files', type=int, nargs='?', help='tota
 parser.add_argument('-i', '--input_file', type=str, nargs='?', help='input_file')
 parser.add_argument('-l', '--input_labels_file', type=str, nargs='?', help='input_labels_file')
 parser.add_argument('-a', '--is_apply_labels', action='store_true', help='label class will be applied to first element of record, so whatever there would be overwritten')
-parser.add_argument('-m', '--class_multiplier', action='store_true', help='label class value multiplier to increase or decrease numerical importance of class label')
+parser.add_argument('-m', '--class_multiplier', type=float, nargs='?', help='label class value multiplier to increase or decrease numerical importance of class label')
 
 FLAGS = parser.parse_args()
 print(FLAGS)
