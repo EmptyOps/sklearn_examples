@@ -18,6 +18,7 @@ parser.add_argument('-s', '--is_use_sample_data', action='store_true', help='A b
 parser.add_argument('-t', '--total_input_files', type=int, nargs='?', help='total_input_files')
 parser.add_argument('-i', '--input_file', type=str, nargs='?', help='input_file')
 parser.add_argument('-l', '--input_labels_file', type=str, nargs='?', help='input_labels_file')
+parser.add_argument('-a', '--is_apply_labels', action='store_true', help='label class will be applied to first element of record, so whatever there would be overwritten')
 
 FLAGS = parser.parse_args()
 print(FLAGS)
@@ -44,6 +45,8 @@ else:
     print(data.shape)
     data = data.reshape((data.shape[0], -1))
     print(data.shape)
+    
+    data[:,0] = input_labels[:]
 
 # normality test
 stat, p = shapiro(data)
