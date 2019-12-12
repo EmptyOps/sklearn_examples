@@ -82,7 +82,7 @@ else:
 from scipy.stats import normaltest
 # normality test
 stat, p = normaltest(data)
-print('Statistics=%.3f' % (stat), p)
+print('Statistics ' , stat, ' p ', p)
 # interpret
 alpha = 0.05
 if p > alpha:
