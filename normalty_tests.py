@@ -20,6 +20,9 @@ parser.add_argument('-i', '--input_file', type=str, nargs='?', help='input_file'
 parser.add_argument('-l', '--input_labels_file', type=str, nargs='?', help='input_labels_file')
 parser.add_argument('-a', '--is_apply_labels', action='store_true', help='label class will be applied to first element of record, so whatever there would be overwritten')
 parser.add_argument('-m', '--class_multiplier', type=float, nargs='?', help='label class value multiplier to increase or decrease numerical importance of class label')
+parser.add_argument('--is_apply_pca_first', action='store_true', help='')
+parser.add_argument('--pca_components', type=int, nargs='?', help='')
+
 
 FLAGS = parser.parse_args()
 print(FLAGS)
@@ -52,6 +55,18 @@ else:
             data[:,0] = input_labels[:]
         else:
             data[:,0] = input_labels[:] * FLAGS.class_multiplier
+            
+    #pca 
+    if FLAGS.is_apply_pca_first:
+    
+        print(data.shape)
+        
+        from sklearn.decomposition import PCA
+        p = PCA(n_components = 1600).fit_transform(data)
+        print( type(p) )
+        print( p )
+        print( p.shape )
+    
 
 # normality test
 stat, p = shapiro(data)
